@@ -1,0 +1,7 @@
+id: echo-contains
+name: Echo contains test
+category: basic
+command: echo "the quick brown fox jumps over the lazy dog"
+expect:
+  type: contains
+  value: "brown fox"

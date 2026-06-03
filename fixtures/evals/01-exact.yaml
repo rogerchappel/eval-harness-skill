@@ -1,0 +1,7 @@
+id: echo-exact-match
+name: Echo exact match test
+category: basic
+command: echo "hello world"
+expect:
+  type: exact
+  value: "hello world"

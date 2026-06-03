@@ -1,0 +1,10 @@
+{
+  "id": "date-format",
+  "name": "Date format matches ISO 8601",
+  "category": "formatting",
+  "command": "date -u '+%Y-%m-%d'",
+  "expect": {
+    "type": "regex",
+    "value": "^\\d{4}-\\d{2}-\\d{2}$"
+  }
+}

@@ -1,0 +1,8 @@
+id: threshold-check
+name: Line count threshold check
+category: numeric
+command: echo 42
+expect:
+  type: threshold
+  threshold: 40
+  comparator: gte
