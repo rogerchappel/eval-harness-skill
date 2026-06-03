@@ -1,0 +1,44 @@
+{
+  "name": "eval-harness-skill",
+  "version": "0.1.0",
+  "description": "Local eval harness for agent skills and CLI workflows — fixtures, expected behaviors, scoring rubrics, and regression reports",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "eval-harness": "bin/eval-harness.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "tsx test/runner.test.ts",
+    "check": "tsc --noEmit",
+    "smoke": "bin/eval-harness.js smoke",
+    "lint": "echo linting placeholder"
+  },
+  "keywords": [
+    "eval",
+    "agent",
+    "skill",
+    "harness",
+    "regression",
+    "testing",
+    "cli"
+  ],
+  "author": "Roger Chappel",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rogerchappel/eval-harness-skill.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "ajv": "^8.17.0",
+    "commander": "^12.0.0"
+  }
+}
