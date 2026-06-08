@@ -1,11 +1,8 @@
 // Runner — executes eval cases and collects results
 
-import { exec } from "child_process";
-import { promisify } from "util";
+import { spawn } from "child_process";
 import { EvalCase, EvalResult, EvalReport } from "./types";
 import { matchOutput } from "./matcher";
-
-const execAsync = promisify(exec);
 
 /** Run a single eval case and return a result */
 export async function runEvalCase(evalCase: EvalCase): Promise<EvalResult> {
@@ -26,31 +23,14 @@ export async function runEvalCase(evalCase: EvalCase): Promise<EvalResult> {
   }
 
   try {
-    let actual: string;
     const timeout = evalCase.timeout ?? 30000;
-
-    if (evalCase.stdin) {
-      const { stdout, stderr } = await execAsync(evalCase.command, {
-        timeout,
-        cwd: evalCase.cwd,
-        env: { ...process.env, ...evalCase.env },
-        input: evalCase.stdin,
-      });
-      actual = stdout + (stderr ? `[stderr]\n${stderr}` : "");
-    } else {
-      // Inject env vars as a way to pass context
-      const envStr = evalCase.env
-        ? Object.entries(evalCase.env)
-            .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
-            .join(" ")
-        : "";
-      const cmd = envStr ? `${envStr} ${evalCase.command}` : evalCase.command;
-      const { stdout, stderr } = await execAsync(cmd, {
-        timeout,
-        cwd: evalCase.cwd,
-      });
-      actual = stdout + (stderr ? `[stderr]\n${stderr}` : "");
-    }
+    const { stdout, stderr } = await runCommand(evalCase.command, {
+      timeout,
+      cwd: evalCase.cwd,
+      env: evalCase.env,
+      stdin: evalCase.stdin,
+    });
+    const actual = stdout + (stderr ? `[stderr]\n${stderr}` : "");
 
     const { passed, message } = matchOutput(actual, evalCase.expect, evalCase);
 
@@ -113,4 +93,56 @@ export async function runEvalSuite(cases: EvalCase[], bail = false): Promise<Eva
 
 function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max) + "…" : s;
+}
+
+function runCommand(
+  command: string,
+  options: {
+    timeout: number;
+    cwd?: string;
+    env?: Record<string, string>;
+    stdin?: string;
+  }
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, {
+      cwd: options.cwd,
+      env: { ...process.env, ...options.env },
+      shell: true,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+    const timer = setTimeout(() => child.kill("SIGTERM"), options.timeout);
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    child.on("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    child.on("close", (code, signal) => {
+      clearTimeout(timer);
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        const error = new Error(`Command exited with code ${code ?? "signal"}`);
+        Object.assign(error, { code, signal, stdout, stderr });
+        reject(error);
+      }
+    });
+
+    if (options.stdin) {
+      child.stdin.end(options.stdin);
+    } else {
+      child.stdin.end();
+    }
+  });
 }

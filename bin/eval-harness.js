@@ -1,10 +1,22 @@
 #!/usr/bin/env node
-// eval-harness CLI wrapper — loads TypeScript via tsx for dev, compiled JS for prod
+// eval-harness CLI wrapper. Uses compiled JS when present, otherwise dev-runs TS with tsx.
 
 try {
-  // Try loading compiled JS first
   require("../dist/cli.js");
-} catch {
-  // Fall back to tsx execution (dev mode)
-  require("tsx").run(["src/cli.ts"]);
+} catch (error) {
+  const { spawnSync } = require("child_process");
+  const path = require("path");
+
+  const result = spawnSync(
+    process.execPath,
+    ["--import", "tsx", path.join(__dirname, "..", "src", "cli.ts"), ...process.argv.slice(2)],
+    { stdio: "inherit" }
+  );
+
+  if (result.error) {
+    console.error(result.error.message);
+    process.exit(1);
+  }
+
+  process.exit(result.status ?? 1);
 }
