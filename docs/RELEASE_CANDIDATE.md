@@ -26,6 +26,12 @@ $ npm run smoke
 Smoke test passed
 ```
 
+## Release Candidate Checklist
+- CLI can be exercised locally without external services.
+- Fixtures cover passing, failing, skipped, schema, regex, and threshold cases.
+- External side effects are limited to commands defined by the local eval files.
+- Report output is deterministic enough for agent regression comparisons.
+
 ## Branch Protection
 Pending best-effort GitHub branch protection setup.
 
