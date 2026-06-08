@@ -33,7 +33,8 @@ Smoke test passed
 - Report output is deterministic enough for agent regression comparisons.
 
 ## Branch Protection
-Pending best-effort GitHub branch protection setup.
+- main is protected (PR required, 1 approval).
+- Admins may bypass.
 
 ## Classification: ship
 Ready for agent builders to define local eval cases and regression-check skills or CLI workflows.
