@@ -54,3 +54,13 @@ Each case specifies:
 ## License
 
 MIT
+
+## Development
+
+```sh
+git clone https://github.com/rogerchappel/undefined.git
+cd undefined
+npm install
+npm test
+npm run smoke
+```
