@@ -7,12 +7,22 @@
   "bin": {
     "eval-harness": "bin/eval-harness.js"
   },
+  "files": [
+    "bin",
+    "dist",
+    "fixtures",
+    "README.md",
+    "LICENSE",
+    "SKILL.md"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "tsx test/runner.test.ts",
     "check": "tsc --noEmit",
     "smoke": "bin/eval-harness.js smoke",
-    "lint": "echo linting placeholder"
+    "lint": "echo linting placeholder",
+    "package:smoke": "npm run build && npm pack --dry-run",
+    "release:check": "npm run check && npm test && npm run smoke && npm run package:smoke"
   },
   "keywords": [
     "eval",
