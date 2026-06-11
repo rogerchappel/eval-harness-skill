@@ -58,8 +58,8 @@ MIT
 ## Development
 
 ```sh
-git clone https://github.com/rogerchappel/undefined.git
-cd undefined
+git clone https://github.com/rogerchappel/eval-harness-skill.git
+cd eval-harness-skill
 npm install
 npm test
 npm run smoke
