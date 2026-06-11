@@ -11,21 +11,35 @@ permissions:
   contents: read
 
 jobs:
-  release-check:
-    name: Release check
+  verify:
+    name: Verify package
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Set up Node
+      - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
+      - name: Run verification
+        run: |
+          npm run lint
+          npm run check
+          npm test
+          npm run build
+          npm run smoke
 
       - name: Run release check
         run: npm run release:check
