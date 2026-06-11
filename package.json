@@ -11,8 +11,12 @@
     "bin",
     "dist",
     "fixtures",
+    "docs",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
     "README.md",
     "LICENSE",
+    "SECURITY.md",
     "SKILL.md"
   ],
   "scripts": {
