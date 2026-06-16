@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 jobs:
-  verify:
-    name: Verify package
+  release-readiness:
+    name: Release readiness
     runs-on: ubuntu-latest
 
     steps:
@@ -26,20 +26,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+        run: npm ci
 
-      - name: Run verification
-        run: |
-          npm run lint
-          npm run check
-          npm test
-          npm run build
-          npm run smoke
-
-      - name: Run release check
+      - name: Run release checks
         run: npm run release:check
