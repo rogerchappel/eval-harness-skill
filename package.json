@@ -11,6 +11,7 @@
     "bin",
     "dist",
     "fixtures",
+    "scripts",
     "docs",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
@@ -24,9 +25,9 @@
     "test": "tsx test/runner.test.ts",
     "check": "tsc --noEmit",
     "smoke": "bin/eval-harness.js smoke",
-    "lint": "echo linting placeholder",
+    "lint": "node scripts/lint.js",
     "package:smoke": "npm run build && npm pack --dry-run",
-    "release:check": "npm run check && npm test && npm run smoke && npm run package:smoke"
+    "release:check": "npm run lint && npm run check && npm test && npm run smoke && npm run package:smoke"
   },
   "keywords": [
     "eval",
