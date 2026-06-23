@@ -8,7 +8,7 @@ Use this checklist before cutting a package or asking reviewers to trust the cur
 npm run release:check
 ```
 
-The release gate runs the project checks, smoke coverage, and package dry-run declared in `package.json`. CI mirrors the same gate so pull requests exercise the install path and published package boundary.
+The release gate runs lint, project checks, smoke coverage, and the package dry-run declared in `package.json`. CI mirrors the same gate so pull requests exercise the install path and published package boundary.
 
 ## Package Boundary
 
