@@ -5,6 +5,7 @@ import { Command } from "commander";
 import { parseEvalSuite } from "./parser";
 import { runEvalSuite } from "./runner";
 import { formatReport } from "./reporter";
+import { EvalReport } from "./types";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -47,6 +48,7 @@ program
   .argument("<dir>", "Eval cases directory or file")
   .option("-o, --report <file>", "Write JSON report to file")
   .option("-f, --format <format>", "Report format (json, text, markdown)", "text")
+  .option("--previous-report <file>", "Compare against a previous JSON report for regressions")
   .option("--bail", "Stop on first failure")
   .option("--tag <tags>", "Filter by comma-separated tags")
   .action(async (dir, opts) => {
@@ -70,7 +72,11 @@ program
       process.exit(0);
     }
 
-    const report = await runEvalSuite(filtered, opts.bail);
+    const previousReport = opts.previousReport
+      ? readPreviousReport(opts.previousReport)
+      : undefined;
+
+    const report = await runEvalSuite(filtered, opts.bail, previousReport);
 
     if (opts.report) {
       fs.writeFileSync(opts.report, formatReport(report, "json"));
@@ -137,3 +143,14 @@ smoke.action(async () => {
 });
 
 program.parse();
+
+function readPreviousReport(file: string): EvalReport {
+  const raw = fs.readFileSync(file, "utf8");
+  const parsed = JSON.parse(raw) as EvalReport;
+
+  if (!Array.isArray(parsed.results)) {
+    throw new Error(`Previous report must be a JSON eval report with a results array: ${file}`);
+  }
+
+  return parsed;
+}

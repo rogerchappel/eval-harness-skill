@@ -60,7 +60,11 @@ export async function runEvalCase(evalCase: EvalCase): Promise<EvalResult> {
 }
 
 /** Run all eval cases and produce a report */
-export async function runEvalSuite(cases: EvalCase[], bail = false): Promise<EvalReport> {
+export async function runEvalSuite(
+  cases: EvalCase[],
+  bail = false,
+  previousReport?: EvalReport
+): Promise<EvalReport> {
   const startMs = Date.now();
   const results: EvalResult[] = [];
 
@@ -87,8 +91,26 @@ export async function runEvalSuite(cases: EvalCase[], bail = false): Promise<Eva
     durationMs: Date.now() - startMs,
     timestamp: new Date().toISOString(),
     results,
-    regressions: [], // TODO: compare against previous report
+    regressions: findRegressions(results, previousReport),
   };
+}
+
+function findRegressions(results: EvalResult[], previousReport?: EvalReport): EvalResult[] {
+  if (!previousReport) {
+    return [];
+  }
+
+  const previousPasses = new Set(
+    previousReport.results
+      .filter((result) => result.status === "pass")
+      .map((result) => result.evalId)
+  );
+
+  return results.filter(
+    (result) =>
+      previousPasses.has(result.evalId) &&
+      (result.status === "fail" || result.status === "error")
+  );
 }
 
 function truncate(s: string, max: number): string {

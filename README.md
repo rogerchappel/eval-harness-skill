@@ -20,6 +20,9 @@ eval-harness run evals/
 
 # Run with JSON report
 eval-harness run evals/ --report report.json
+
+# Compare against a saved report to flag pass-to-fail regressions
+eval-harness run evals/ --previous-report report.json --format markdown
 ```
 
 ## Structure
