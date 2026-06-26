@@ -65,3 +65,4 @@ eval-harness run evals/ --format markdown --report report.md
 3. Review failures — are they regressions or expected changes?
 4. Update eval cases if behavior intentionally changed
 5. Save JSON report for regression tracking
+6. Compare future runs with `eval-harness run evals/ --previous-report report.json`
