@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { parseCaseFile, parseEvalSuite } from "../src/parser";
 import { matchOutput } from "../src/matcher";
-import { runEvalCase } from "../src/runner";
+import { runEvalCase, runEvalSuite } from "../src/runner";
 
 let passed = 0;
 let failed = 0;
@@ -167,6 +167,28 @@ console.log("\nRunner Tests:");
   };
   const errorResult = await runEvalCase(errorCase);
   assert(errorResult.status === "error", "non-zero exit returns an execution error");
+
+  const regressionReport = await runEvalSuite([failCase], false, {
+    total: 1,
+    passed: 1,
+    failed: 0,
+    skipped: 0,
+    errors: 0,
+    durationMs: 1,
+    timestamp: new Date().toISOString(),
+    results: [{
+      evalId: "t2",
+      name: "Fail case",
+      category: "test",
+      status: "pass",
+      message: "previously passed",
+      durationMs: 1,
+      timestamp: new Date().toISOString(),
+    }],
+    regressions: [],
+  });
+  assert(regressionReport.regressions.length === 1, "Marks previous pass that now fails as regression");
+  assert(regressionReport.regressions[0].evalId === "t2", "Regression keeps the failing eval id");
 
   // Summary
   console.log(`\n  ${passed} passed, ${failed} failed, out of ${passed + failed} tests`);
