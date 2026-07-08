@@ -54,6 +54,17 @@ Each case specifies:
 - No agent credentials or live data are required
 - Dry-run mode available: `eval-harness run --dry-run evals/`
 
+## Development checks
+
+Run the same local gates that CI runs before opening a PR:
+
+```bash
+npm run check --if-present
+npm run build --if-present
+npm test --if-present
+npm run smoke --if-present
+```
+
 ## License
 
 MIT
