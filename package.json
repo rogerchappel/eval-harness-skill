@@ -22,7 +22,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "tsx test/runner.test.ts",
+    "test": "tsx --test test/*.test.ts",
     "check": "tsc --noEmit",
     "smoke": "bin/eval-harness.js smoke",
     "lint": "node scripts/lint.js",
