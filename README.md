@@ -65,7 +65,7 @@ npm pack --dry-run
 
 - All execution is local — no network calls
 - No agent credentials or live data are required
-- Dry-run mode available: `eval-harness run --dry-run evals/`
+- Review eval case files before running them because commands execute locally
 
 ## Development checks
 
