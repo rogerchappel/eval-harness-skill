@@ -42,6 +42,19 @@ Each case specifies:
 - Expected output (exact text, regex pattern, or schema validation)
 - Scoring rubric (pass/fail/threshold)
 
+## Verification
+
+Run the same checks used for release-readiness before publishing or opening a release PR:
+
+```bash
+npm run check
+npm test
+npm run build
+npm run smoke
+npm run release:check
+npm pack --dry-run
+```
+
 ## Limitations
 
 - This is a local tool; it does not call AI models or external APIs
