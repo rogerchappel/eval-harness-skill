@@ -47,11 +47,13 @@ export async function runEvalCase(evalCase: EvalCase): Promise<EvalResult> {
   } catch (err: any) {
     const signal = err.signal ? ` [signal: ${err.signal}]` : "";
     const code = err.code ? ` [code: ${err.code}]` : "";
+    const actual = formatErrorOutput(err.stdout, err.stderr);
     return {
       evalId: evalCase.id,
       name: evalCase.name,
       category: evalCase.category,
       status: "error",
+      ...(actual ? { actual: truncate(actual, 500) } : {}),
       message: `Execution error: ${err.message}${signal}${code}`,
       durationMs: Date.now() - startMs,
       timestamp,
@@ -115,6 +117,20 @@ function findRegressions(results: EvalResult[], previousReport?: EvalReport): Ev
 
 function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max) + "…" : s;
+}
+
+function formatErrorOutput(stdout?: string, stderr?: string): string {
+  const parts: string[] = [];
+
+  if (stdout) {
+    parts.push(stdout);
+  }
+
+  if (stderr) {
+    parts.push(`[stderr]\n${stderr}`);
+  }
+
+  return parts.join("");
 }
 
 function runCommand(

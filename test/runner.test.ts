@@ -168,6 +168,19 @@ console.log("\nRunner Tests:");
   const errorResult = await runEvalCase(errorCase);
   assert(errorResult.status === "error", "non-zero exit returns an execution error");
 
+  const errorOutputCase = {
+    id: "t5",
+    name: "Error output case",
+    category: "test",
+    command: "node -e \"console.log('before fail'); console.error('failure detail'); process.exit(2)\"",
+    expect: { type: "exact", value: "anything" } as any,
+  };
+  const errorOutputResult = await runEvalCase(errorOutputCase);
+  assert(errorOutputResult.status === "error", "non-zero exit keeps error status");
+  assert(errorOutputResult.actual?.includes("before fail") === true, "error result includes stdout for debugging");
+  assert(errorOutputResult.actual?.includes("[stderr]") === true, "error result labels stderr for debugging");
+  assert(errorOutputResult.actual?.includes("failure detail") === true, "error result includes stderr text");
+
   const regressionReport = await runEvalSuite([failCase], false, {
     total: 1,
     passed: 1,
