@@ -8,6 +8,7 @@ import { formatReport } from "./reporter";
 import { EvalReport } from "./types";
 import * as fs from "fs";
 import * as path from "path";
+import { yamlDump } from "./yaml";
 
 const program = new Command();
 
@@ -94,19 +95,6 @@ program
   });
 
 // Internal helper for YAML dump (simple approach)
-function yamlDump(obj: any): string {
-  // Use a minimal YAML output — for production use js-yaml.dump
-  return JSON.stringify(obj, null, 2)
-    .replace(/"id":/g, "id:")
-    .replace(/"name":/g, "name:")
-    .replace(/"category":/g, "category:")
-    .replace(/"command":/g, "command:")
-    .replace(/"type":/g, "type:")
-    .replace(/"value":/g, "value:")
-    .replace(/"expect":/g, "expect:")
-    .replace(/"/g, "");
-}
-
 // Smoke command for quick verification
 const smoke = program.command("smoke").description("Run embedded smoke test");
 smoke.action(async () => {

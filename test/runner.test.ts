@@ -5,6 +5,7 @@ import * as path from "path";
 import { parseCaseFile, parseEvalSuite } from "../src/parser";
 import { matchOutput } from "../src/matcher";
 import { runEvalCase, runEvalSuite } from "../src/runner";
+import { yamlDump } from "../src/yaml";
 
 let passed = 0;
 let failed = 0;
@@ -21,6 +22,20 @@ function assert(condition: boolean, msg: string) {
 
 // ===== Parser Tests =====
 console.log("\nParser Tests:");
+
+const generatedYaml = yamlDump({
+  id: "quoted-values",
+  name: "Value containing YAML syntax",
+  category: "unit",
+  command: "printf 'key: value # literal'",
+  expect: { type: "exact", value: "key: value # literal" },
+});
+const generatedCasePath = path.join(".tmp", "generated-case.yaml");
+fs.mkdirSync(path.dirname(generatedCasePath), { recursive: true });
+fs.writeFileSync(generatedCasePath, generatedYaml);
+const generatedCase = parseCaseFile(generatedCasePath);
+assert(generatedCase.command === "printf 'key: value # literal'", "Generated YAML preserves command punctuation");
+assert(generatedCase.expect.value === "key: value # literal", "Generated YAML preserves expected value punctuation");
 
 // Create temp dir for tests
 const tmpDir = ".tmp/tests";
