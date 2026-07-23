@@ -49,7 +49,7 @@ expect:
 ### Run the suite
 
 ```bash
-eval-harness run evals/ --report report.json
+eval-harness run evals/ --format json --report report.json
 ```
 
 ### Check result
@@ -58,11 +58,15 @@ eval-harness run evals/ --report report.json
 eval-harness run evals/ --format markdown --report report.md
 ```
 
+`run` accepts a recursive eval directory or one `.yaml`, `.yml`, or `.json`
+case file. `--format` selects the format written to both stdout and `--report`.
+Previous-report comparisons require a report created with `--format json`.
+
 ## Validation Workflow
 
 1. Write eval cases in `evals/` directory
 2. Run `eval-harness run evals/` to execute
 3. Review failures — are they regressions or expected changes?
 4. Update eval cases if behavior intentionally changed
-5. Save JSON report for regression tracking
+5. Save a JSON report for regression tracking with `--format json --report report.json`
 6. Compare future runs with `eval-harness run evals/ --previous-report report.json`
