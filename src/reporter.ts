@@ -90,6 +90,15 @@ function formatMarkdown(report: EvalReport): string {
   }
   lines.push("");
 
+  if (report.regressions.length > 0) {
+    lines.push("## Regressions");
+    lines.push("");
+    for (const regression of report.regressions) {
+      lines.push(`- **${regression.name}** [\`${regression.category}\`]`);
+    }
+    lines.push("");
+  }
+
   lines.push("## All Results");
   lines.push("");
   lines.push("| Eval | Category | Status | Duration |");
