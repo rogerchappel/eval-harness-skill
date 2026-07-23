@@ -18,8 +18,14 @@ eval-harness init --type cli
 # Run all evals
 eval-harness run evals/
 
-# Run with JSON report
-eval-harness run evals/ --report report.json
+# Run one YAML, YML, or JSON eval case
+eval-harness run evals/tool-call-format.yaml
+
+# Write a JSON report (the selected format applies to stdout and the file)
+eval-harness run evals/ --format json --report report.json
+
+# Write a Markdown report
+eval-harness run evals/ --format markdown --report report.md
 
 # Compare against a saved report to flag pass-to-fail regressions
 eval-harness run evals/ --previous-report report.json --format markdown
@@ -37,10 +43,16 @@ evals/
 ```
 
 Each case specifies:
+
 - A command or script to run
 - Input (stdin, file, or inline)
 - Expected output (exact text, regex pattern, or schema validation)
 - Scoring rubric (pass/fail/threshold)
+
+`run` accepts either a single `.yaml`, `.yml`, or `.json` case or a directory,
+which is searched recursively. The `--format` option controls both stdout and
+`--report` file contents. Use `--format json` when creating a file for a later
+`--previous-report` comparison.
 
 ## Verification
 

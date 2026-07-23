@@ -11,6 +11,8 @@ import * as path from "path";
 import { yamlDump } from "./yaml";
 
 const program = new Command();
+const REPORT_FORMATS = ["json", "text", "markdown"] as const;
+type ReportFormat = (typeof REPORT_FORMATS)[number];
 
 program
   .name("eval-harness")
@@ -45,14 +47,15 @@ program
 
 program
   .command("run")
-  .description("Run eval cases from a directory")
-  .argument("<dir>", "Eval cases directory or file")
-  .option("-o, --report <file>", "Write JSON report to file")
+  .description("Run eval cases from a directory or file")
+  .argument("<path>", "Eval cases directory or .yaml, .yml, or .json file")
+  .option("-o, --report <file>", "Write the formatted report to file")
   .option("-f, --format <format>", "Report format (json, text, markdown)", "text")
   .option("--previous-report <file>", "Compare against a previous JSON report for regressions")
   .option("--bail", "Stop on first failure")
   .option("--tag <tags>", "Filter by comma-separated tags")
   .action(async (dir, opts) => {
+    const outputFormat = parseReportFormat(opts.format);
     const cases = parseEvalSuite(dir);
 
     if (cases.length === 0) {
@@ -78,14 +81,13 @@ program
       : undefined;
 
     const report = await runEvalSuite(filtered, opts.bail, previousReport);
+    const text = formatReport(report, outputFormat);
 
     if (opts.report) {
-      fs.writeFileSync(opts.report, formatReport(report, "json"));
+      fs.writeFileSync(opts.report, text);
       console.log(`Report written to ${opts.report}`);
     }
 
-    const outputFormat = opts.format as "json" | "text" | "markdown";
-    const text = formatReport(report, outputFormat === "json" ? "json" : outputFormat);
     console.log(text);
 
     // Exit with non-zero if any failures
@@ -141,4 +143,13 @@ function readPreviousReport(file: string): EvalReport {
   }
 
   return parsed;
+}
+
+function parseReportFormat(format: string): ReportFormat {
+  if (!REPORT_FORMATS.includes(format as ReportFormat)) {
+    throw new Error(
+      `Unsupported report format "${format}". Expected ${REPORT_FORMATS.join(", ")}`
+    );
+  }
+  return format as ReportFormat;
 }

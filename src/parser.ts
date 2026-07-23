@@ -26,7 +26,21 @@ export function parseCaseFile(filePath: string): EvalCase {
 /** Parse all eval case files from a directory */
 export function parseEvalSuite(dir: string): EvalCase[] {
   if (!fs.existsSync(dir)) {
-    throw new Error(`Eval directory not found: ${dir}`);
+    throw new Error(`Eval path not found: ${dir}`);
+  }
+
+  const inputStat = fs.statSync(dir);
+  if (inputStat.isFile()) {
+    const extension = path.extname(dir).toLowerCase();
+    if (!CASE_EXTENSIONS.includes(extension)) {
+      throw new Error(
+        `Unsupported eval file type "${extension || "(none)"}": ${dir}. Expected .yaml, .yml, or .json`
+      );
+    }
+    return [parseCaseFile(dir)];
+  }
+  if (!inputStat.isDirectory()) {
+    throw new Error(`Eval path must be a directory or .yaml, .yml, or .json file: ${dir}`);
   }
 
   const cases: EvalCase[] = [];
