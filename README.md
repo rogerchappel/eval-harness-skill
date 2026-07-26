@@ -9,10 +9,15 @@ Agent skills become real when they can be tested. `eval-harness-skill` provides 
 ## Quickstart
 
 ```bash
-# Install
-npm install -g eval-harness-skill
+# Install the current source (the package is not yet published to npm)
+git clone https://github.com/rogerchappel/eval-harness-skill.git
+cd eval-harness-skill
+npm ci
+npm run build
+npm install --global .
 
 # Initialize a new eval suite
+cd ..
 eval-harness init --type cli
 
 # Run all evals
@@ -56,16 +61,15 @@ which is searched recursively. The `--format` option controls both stdout and
 
 ## Verification
 
-Run the same checks used for release-readiness before publishing or opening a release PR:
+Run the same release-readiness gate used by CI:
 
 ```bash
-npm run check
-npm test
-npm run build
-npm run smoke
 npm run release:check
-npm pack --dry-run
 ```
+
+This includes linting, type checking, tests, the embedded smoke test, package
+contents validation, and a smoke test that installs the packed artifact in a
+temporary project and exercises `--help`, `init`, `run`, and `smoke`.
 
 ## Limitations
 
@@ -78,17 +82,6 @@ npm pack --dry-run
 - All execution is local — no network calls
 - No agent credentials or live data are required
 - Review eval case files before running them because commands execute locally
-
-## Development checks
-
-Run the same local gates that CI runs before opening a PR:
-
-```bash
-npm run check --if-present
-npm run build --if-present
-npm test --if-present
-npm run smoke --if-present
-```
 
 ## License
 
@@ -104,26 +97,14 @@ npm test
 npm run smoke
 ```
 
-## Release verification
-
-Run the same checks locally before opening a release PR:
-
-```bash
-npm run check
-npm test
-npm run build
-npm run smoke
-npm run package:smoke
-npm run release:check
-```
-
 ## Release readiness
 
 Run the release gate before tagging or publishing:
 
 ```sh
 npm run release:check
-npm pack --dry-run
 ```
 
-The package smoke check prints the tarball contents so missing runtime files are caught before release.
+The package checks print the tarball contents so missing runtime files are
+caught, then install that tarball outside the checkout and exercise the
+installed CLI.
