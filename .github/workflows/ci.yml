@@ -26,14 +26,5 @@ jobs:
             npm install
           fi
 
-      - name: Check package
-        run: npm run check --if-present
-
-      - name: Build package
-        run: npm run build --if-present
-
-      - name: Run tests
-        run: npm test --if-present
-
-      - name: Run smoke test
-        run: npm run smoke --if-present
+      - name: Verify release readiness
+        run: npm run release:check
