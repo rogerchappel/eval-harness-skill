@@ -16,7 +16,17 @@ const requiredFiles = [
   "SECURITY.md",
   "SKILL.md",
 ];
-const requiredScripts = ["build", "test", "check", "smoke", "lint", "prepack", "package:smoke", "release:check"];
+const requiredScripts = [
+  "build",
+  "test",
+  "check",
+  "smoke",
+  "lint",
+  "prepack",
+  "package:smoke",
+  "package:install-smoke",
+  "release:check",
+];
 const missingFiles = requiredFiles.filter((file) => !pkg.files?.includes(file));
 const missingScripts = requiredScripts.filter((script) => !pkg.scripts?.[script]);
 

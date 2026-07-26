@@ -28,7 +28,8 @@
     "lint": "node scripts/lint.js",
     "prepack": "npm run build",
     "package:smoke": "npm pack --dry-run",
-    "release:check": "npm run lint && npm run check && npm test && npm run smoke && npm run package:smoke"
+    "package:install-smoke": "node scripts/package-install-smoke.js",
+    "release:check": "npm run lint && npm run check && npm test && npm run smoke && npm run package:smoke && npm run package:install-smoke"
   },
   "keywords": [
     "eval",
