@@ -148,6 +148,9 @@ assert(matchOutput('not json', { type: "schema", value: schema }, {} as any).pas
 // Threshold match
 assert(matchOutput("42", { type: "threshold", threshold: 40, comparator: "gte" }, {} as any).passed === true, "Threshold >= passes");
 assert(matchOutput("39", { type: "threshold", threshold: 40, comparator: "gte" }, {} as any).passed === false, "Threshold < fails");
+assert(matchOutput("39", { type: "threshold", threshold: 40, comparator: "lte" }, {} as any).passed === true, "Threshold <= passes");
+assert(matchOutput("41", { type: "threshold", threshold: 40, comparator: "gt" }, {} as any).passed === true, "Threshold > passes");
+assert(matchOutput("39", { type: "threshold", threshold: 40, comparator: "lt" }, {} as any).passed === true, "Threshold < passes");
 assert(matchOutput("5", { type: "threshold", threshold: 5, comparator: "eq", tolerance: 0.1 }, {} as any).passed === true, "Threshold eq with tolerance passes");
 
 // ===== Runner Tests =====

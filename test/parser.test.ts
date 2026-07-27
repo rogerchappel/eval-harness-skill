@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { parseEvalSuite } from "../src/parser";
+import { parseCaseFile, parseEvalSuite } from "../src/parser";
 
 const yamlCase = (id: string) => [
   `id: ${id}`,
@@ -15,6 +15,22 @@ const yamlCase = (id: string) => [
   "  value: ok",
   ""
 ].join("\n");
+
+function writeThresholdCase(expectation: Record<string, unknown>): string {
+  const root = mkdtempSync(join(tmpdir(), "eval-harness-parser-"));
+  const file = join(root, "threshold.json");
+  writeFileSync(file, JSON.stringify({
+    id: "threshold-case",
+    name: "threshold-case",
+    category: "parser",
+    command: 'echo "10"',
+    expect: {
+      type: "threshold",
+      ...expectation
+    }
+  }));
+  return file;
+}
 
 describe("parseEvalSuite", () => {
   it("parses a supported single case file", () => {
@@ -54,5 +70,55 @@ describe("parseEvalSuite", () => {
       () => parseEvalSuite(file),
       /Unsupported eval file type "\.txt".*Expected \.yaml, \.yml, or \.json/
     );
+  });
+
+  it("accepts every supported threshold comparator", () => {
+    for (const comparator of ["gte", "lte", "gt", "lt", "eq"]) {
+      const file = writeThresholdCase({ threshold: 10, comparator });
+      assert.equal(parseCaseFile(file).expect.comparator, comparator);
+    }
+  });
+
+  it("rejects unsupported threshold comparators with case context", () => {
+    const file = writeThresholdCase({
+      threshold: 10,
+      comparator: "definitely-not-valid"
+    });
+
+    assert.throws(
+      () => parseCaseFile(file),
+      new RegExp(
+        `${file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\(threshold-case\\): ` +
+        'invalid expect\\.comparator "definitely-not-valid"\\. ' +
+        "Must be gte\\|lte\\|gt\\|lt\\|eq"
+      )
+    );
+  });
+
+  it("rejects missing, non-numeric, and non-finite thresholds", () => {
+    for (const threshold of [undefined, "10", null, Number.NaN, Infinity, -Infinity]) {
+      const file = writeThresholdCase({ threshold });
+      assert.throws(
+        () => parseCaseFile(file),
+        /threshold-case\): expect\.threshold must be a finite number/
+      );
+    }
+  });
+
+  it("rejects non-numeric, non-finite, and negative tolerances", () => {
+    for (const tolerance of ["0.1", null, Number.NaN, Infinity, -Infinity, -0.1]) {
+      const file = writeThresholdCase({ threshold: 10, tolerance });
+      assert.throws(
+        () => parseCaseFile(file),
+        /threshold-case\): expect\.tolerance must be a finite non-negative number/
+      );
+    }
+  });
+
+  it("accepts an omitted tolerance and finite non-negative tolerances", () => {
+    for (const tolerance of [undefined, 0, 0.1]) {
+      const file = writeThresholdCase({ threshold: 10, tolerance });
+      assert.equal(parseCaseFile(file).expect.tolerance, tolerance);
+    }
   });
 });
