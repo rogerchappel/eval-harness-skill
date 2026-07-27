@@ -6,6 +6,7 @@ import yaml from "js-yaml";
 import { EvalCase } from "./types";
 
 const CASE_EXTENSIONS = [".yaml", ".yml", ".json"];
+const THRESHOLD_COMPARATORS = ["gte", "lte", "gt", "lt", "eq"] as const;
 
 /** Parse a single eval case file */
 export function parseCaseFile(filePath: string): EvalCase {
@@ -89,6 +90,35 @@ function validateEvalCase(evalCase: EvalCase, filePath: string): void {
     throw new Error(
       `${filePath} (${evalCase.id}): invalid expect.type "${evalCase.expect.type}". Must be exact|contains|regex|schema|threshold`
     );
+  }
+  if (evalCase.expect.type === "threshold") {
+    if (typeof evalCase.expect.threshold !== "number" || !Number.isFinite(evalCase.expect.threshold)) {
+      throw new Error(
+        `${filePath} (${evalCase.id}): expect.threshold must be a finite number`
+      );
+    }
+    if (
+      evalCase.expect.comparator !== undefined &&
+      !THRESHOLD_COMPARATORS.includes(evalCase.expect.comparator)
+    ) {
+      throw new Error(
+        `${filePath} (${evalCase.id}): invalid expect.comparator "${evalCase.expect.comparator}". ` +
+        `Must be ${THRESHOLD_COMPARATORS.join("|")}`
+      );
+    }
+    if (
+      evalCase.expect.tolerance !== undefined &&
+      (
+        typeof evalCase.expect.tolerance !== "number" ||
+        !Number.isFinite(evalCase.expect.tolerance) ||
+        evalCase.expect.tolerance < 0
+      )
+    ) {
+      throw new Error(
+        `${filePath} (${evalCase.id}): expect.tolerance must be a finite non-negative number`
+      );
+    }
+    return;
   }
   if (evalCase.expect.value === undefined && evalCase.expect.threshold === undefined) {
     throw new Error(`${filePath} (${evalCase.id}): missing expect.value or expect.threshold`);
