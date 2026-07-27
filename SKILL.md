@@ -16,9 +16,15 @@ Use this skill when you need to:
 
 ## Setup
 
-`npm install -g eval-harness-skill`
+The package is not yet published to npm. Install the current source:
 
-Or clone and run: `npm install && npm run build`
+```bash
+git clone https://github.com/rogerchappel/eval-harness-skill.git
+cd eval-harness-skill
+npm ci
+npm run build
+npm install --global .
+```
 
 ## Side-Effect Boundaries
 
