@@ -118,4 +118,23 @@ describe("eval-harness run", () => {
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Unsupported report format "xml"/);
   });
+
+  it("rejects partial and non-finite threshold output", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+
+    for (const [name, output] of [["partial", "42oops"], ["non-finite", "Infinity"]]) {
+      const input = join(root, `${name}.json`);
+      writeFileSync(input, JSON.stringify({
+        id: name,
+        name,
+        category: "cli",
+        command: `${process.execPath} -e "console.log('${output}')"`,
+        expect: { type: "threshold", threshold: 40, comparator: "gte" }
+      }));
+
+      const result = run([input]);
+      assert.equal(result.status, 1, result.stderr);
+      assert.match(result.stdout, /Cannot parse finite numeric value/);
+    }
+  });
 });

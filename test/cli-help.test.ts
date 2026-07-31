@@ -13,4 +13,14 @@ describe("eval-harness CLI help", () => {
     assert.match(result.stdout, /Usage:/);
     assert.match(result.stdout, /eval-harness/);
   });
+
+  it("documents the supported init types", () => {
+    const result = spawnSync(process.execPath, ["bin/eval-harness.js", "init", "--help"], {
+      cwd: new URL("..", import.meta.url),
+      encoding: "utf8"
+    });
+
+    assert.equal(result.status, 0);
+    assert.match(result.stdout, /Eval type: cli or lib/);
+  });
 });
