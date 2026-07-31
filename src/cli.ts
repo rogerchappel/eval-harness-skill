@@ -12,7 +12,9 @@ import { yamlDump } from "./yaml";
 
 const program = new Command();
 const REPORT_FORMATS = ["json", "text", "markdown"] as const;
+const EVAL_TYPES = ["cli", "lib"] as const;
 type ReportFormat = (typeof REPORT_FORMATS)[number];
+type EvalType = (typeof EVAL_TYPES)[number];
 
 program
   .name("eval-harness")
@@ -22,9 +24,10 @@ program
 program
   .command("init")
   .description("Initialize a new eval suite directory")
-  .option("--type <type>", "Eval type (cli, lib)", "cli")
+  .option("--type <type>", "Eval type: cli or lib", "cli")
   .option("--dir <dir>", "Output directory", "evals")
   .action((opts) => {
+    const type = parseEvalType(opts.type);
     const dir = opts.dir;
     if (fs.existsSync(dir)) {
       console.log(`Directory ${dir} already exists`);
@@ -37,7 +40,7 @@ program
       id: "sample-exact-match",
       name: "Sample exact match eval",
       category: "demo",
-      command: opts.type === "cli" ? 'echo "hello world"' : 'node -e "console.log(\\"hello world\\")"',
+      command: type === "cli" ? 'echo "hello world"' : 'node -e "console.log(\\"hello world\\")"',
       expect: { type: "contains", value: "hello world" },
     };
     fs.writeFileSync(path.join(dir, "sample.yaml"), yamlDump(sample));
@@ -152,4 +155,13 @@ function parseReportFormat(format: string): ReportFormat {
     );
   }
   return format as ReportFormat;
+}
+
+function parseEvalType(type: string): EvalType {
+  if (!EVAL_TYPES.includes(type as EvalType)) {
+    throw new Error(
+      `Unsupported eval type "${type}". Expected ${EVAL_TYPES.join(" or ")}`
+    );
+  }
+  return type as EvalType;
 }

@@ -91,9 +91,9 @@ function matchSchema(actual: string, exp: OutputExpectation): { passed: boolean;
 }
 
 function matchThreshold(actual: string, exp: OutputExpectation): { passed: boolean; message: string } {
-  const num = parseFloat(actual);
-  if (isNaN(num)) {
-    return { passed: false, message: `Cannot parse numeric value from output: "${truncate(actual, 50)}"` };
+  const num = Number(actual);
+  if (actual === "" || !Number.isFinite(num)) {
+    return { passed: false, message: `Cannot parse finite numeric value from output: "${truncate(actual, 50)}"` };
   }
 
   const threshold = exp.threshold ?? 0;
