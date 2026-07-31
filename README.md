@@ -36,6 +36,10 @@ eval-harness run evals/ --format markdown --report report.md
 eval-harness run evals/ --previous-report report.json --format markdown
 ```
 
+`init --type` accepts `cli` (the default) or `lib`. The `cli` sample uses a
+shell command, while the `lib` sample invokes Node.js. Unsupported types are
+rejected without creating the output directory.
+
 ## Structure
 
 An eval suite lives in a directory with individual case files:
@@ -58,6 +62,10 @@ Each case specifies:
 which is searched recursively. The `--format` option controls both stdout and
 `--report` file contents. Use `--format json` when creating a file for a later
 `--previous-report` comparison.
+
+Threshold expectations require the command's complete trimmed output to be a
+finite JavaScript number. Surrounding whitespace is allowed, but partial
+values such as `42oops` and non-finite values such as `Infinity` are rejected.
 
 ## Verification
 

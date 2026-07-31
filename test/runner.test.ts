@@ -152,6 +152,13 @@ assert(matchOutput("39", { type: "threshold", threshold: 40, comparator: "lte" }
 assert(matchOutput("41", { type: "threshold", threshold: 40, comparator: "gt" }, {} as any).passed === true, "Threshold > passes");
 assert(matchOutput("39", { type: "threshold", threshold: 40, comparator: "lt" }, {} as any).passed === true, "Threshold < passes");
 assert(matchOutput("5", { type: "threshold", threshold: 5, comparator: "eq", tolerance: 0.1 }, {} as any).passed === true, "Threshold eq with tolerance passes");
+assert(matchOutput("  42 \n", { type: "threshold", threshold: 40, comparator: "gte" }, {} as any).passed === true, "Threshold permits surrounding whitespace");
+for (const output of ["42oops", "42 43", "Infinity", "-Infinity", "NaN", ""]) {
+  assert(
+    matchOutput(output, { type: "threshold", threshold: 40, comparator: "gte" }, {} as any).passed === false,
+    `Threshold rejects non-finite or partial numeric output: ${JSON.stringify(output)}`
+  );
+}
 
 // ===== Runner Tests =====
 console.log("\nRunner Tests:");

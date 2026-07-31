@@ -5,6 +5,9 @@
 - Add release-readiness checks for package metadata, pack contents, and CI verification.
 - Accept individual YAML, YML, and JSON eval files as `run` inputs.
 - Write `--report` files in the selected JSON, text, or Markdown format.
+- Reject partial and non-finite command output in threshold expectations.
+- Reject unsupported `init --type` values before creating an eval directory.
+
 ## 0.1.0
 
 - Initial release candidate for local eval suite parsing, command execution, matching, reporting, and CLI smoke verification.
