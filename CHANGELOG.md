@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Refresh the lockfile to use `fast-uri` 3.1.5, resolving [GHSA-7p8r-x3mc-p8w7](https://github.com/advisories/GHSA-7p8r-x3mc-p8w7) in AJV's runtime dependency tree.
 - Add release-readiness checks for package metadata, pack contents, and CI verification.
 - Accept individual YAML, YML, and JSON eval files as `run` inputs.
 - Write `--report` files in the selected JSON, text, or Markdown format.
