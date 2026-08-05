@@ -29,10 +29,6 @@ program
   .action((opts) => {
     const type = parseEvalType(opts.type);
     const dir = opts.dir;
-    if (fs.existsSync(dir)) {
-      console.log(`Directory ${dir} already exists`);
-      return;
-    }
     fs.mkdirSync(dir, { recursive: true });
 
     // Create a sample eval case
@@ -43,9 +39,19 @@ program
       command: type === "cli" ? 'echo "hello world"' : 'node -e "console.log(\\"hello world\\")"',
       expect: { type: "contains", value: "hello world" },
     };
-    fs.writeFileSync(path.join(dir, "sample.yaml"), yamlDump(sample));
+    const samplePath = path.join(dir, "sample.yaml");
+    try {
+      fs.writeFileSync(samplePath, yamlDump(sample), { flag: "wx" });
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "EEXIST") {
+        console.error(`Refusing to overwrite existing file: ${samplePath}`);
+        process.exitCode = 1;
+        return;
+      }
+      throw error;
+    }
     console.log(`Initialized eval suite in ${dir}/`);
-    console.log(`  Created: ${dir}/sample.yaml`);
+    console.log(`  Created: ${samplePath}`);
   });
 
 program
