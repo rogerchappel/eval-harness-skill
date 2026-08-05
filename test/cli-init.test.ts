@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -38,5 +38,40 @@ describe("eval-harness init", () => {
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Unsupported eval type "nonsense".*Expected cli or lib/);
     assert.equal(existsSync(directory), false);
+  });
+
+  it("initializes an existing empty directory", () => {
+    const directory = mkdtempSync(join(tmpdir(), "eval-harness-init-"));
+    const result = init("cli", directory);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Initialized eval suite/);
+    assert.match(readFileSync(join(directory, "sample.yaml"), "utf8"), /command: echo/);
+  });
+
+  it("preserves files in an existing populated directory", () => {
+    const directory = mkdtempSync(join(tmpdir(), "eval-harness-init-"));
+    const existingFile = join(directory, "notes.txt");
+    writeFileSync(existingFile, "keep me\n");
+
+    const result = init("lib", directory);
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(readFileSync(existingFile, "utf8"), "keep me\n");
+    assert.match(readFileSync(join(directory, "sample.yaml"), "utf8"), /command: node -e/);
+  });
+
+  it("refuses to overwrite an existing sample", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-init-"));
+    const directory = join(root, "existing");
+    const sample = join(directory, "sample.yaml");
+    mkdirSync(directory);
+    writeFileSync(sample, "custom: content\n");
+
+    const result = init("cli", directory);
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Refusing to overwrite existing file.*sample\.yaml/);
+    assert.equal(readFileSync(sample, "utf8"), "custom: content\n");
   });
 });
