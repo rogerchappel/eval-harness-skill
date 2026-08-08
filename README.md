@@ -63,6 +63,10 @@ which is searched recursively. The `--format` option controls both stdout and
 `--report` file contents. Use `--format json` when creating a file for a later
 `--previous-report` comparison.
 
+Every case `id` must be unique across the complete recursive suite. Duplicate
+IDs are rejected before any case command runs, and the error identifies both
+conflicting case files.
+
 Threshold expectations require the command's complete trimmed output to be a
 finite JavaScript number. Surrounding whitespace is allowed, but partial
 values such as `42oops` and non-finite values such as `Infinity` are rejected.
