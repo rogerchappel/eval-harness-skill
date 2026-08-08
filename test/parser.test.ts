@@ -61,6 +61,50 @@ describe("parseEvalSuite", () => {
     );
   });
 
+  it("rejects duplicate IDs in the same directory with both case paths", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-parser-"));
+    const first = join(root, "first.yaml");
+    const second = join(root, "second.yml");
+    writeFileSync(first, yamlCase("duplicate"));
+    writeFileSync(second, yamlCase("duplicate"));
+
+    assert.throws(
+      () => parseEvalSuite(root),
+      (error: Error) => {
+        assert.match(error.message, /Duplicate eval ID "duplicate"/);
+        assert.match(error.message, new RegExp(first.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+        assert.match(error.message, new RegExp(second.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+        return true;
+      }
+    );
+  });
+
+  it("rejects duplicate IDs across nested directories with both case paths", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-parser-"));
+    const nested = join(root, "nested");
+    mkdirSync(nested);
+    const first = join(root, "first.json");
+    const second = join(nested, "second.yaml");
+    writeFileSync(first, JSON.stringify({
+      id: "nested-duplicate",
+      name: "first",
+      category: "parser",
+      command: 'echo "ok"',
+      expect: { type: "contains", value: "ok" }
+    }));
+    writeFileSync(second, yamlCase("nested-duplicate"));
+
+    assert.throws(
+      () => parseEvalSuite(root),
+      (error: Error) => {
+        assert.match(error.message, /Duplicate eval ID "nested-duplicate"/);
+        assert.match(error.message, new RegExp(first.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+        assert.match(error.message, new RegExp(second.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+        return true;
+      }
+    );
+  });
+
   it("rejects an unsupported single file with a clear diagnostic", () => {
     const root = mkdtempSync(join(tmpdir(), "eval-harness-parser-"));
     const file = join(root, "case.txt");
