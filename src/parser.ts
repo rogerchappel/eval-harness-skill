@@ -44,14 +44,32 @@ export function parseEvalSuite(dir: string): EvalCase[] {
     throw new Error(`Eval path must be a directory or .yaml, .yml, or .json file: ${dir}`);
   }
 
-  const cases: EvalCase[] = [];
+  const caseFiles = collectCaseFiles(dir);
+  const cases = caseFiles.map(parseCaseFile);
+  const firstPathById = new Map<string, string>();
+
+  cases.forEach((evalCase, index) => {
+    const firstPath = firstPathById.get(evalCase.id);
+    if (firstPath) {
+      throw new Error(
+        `Duplicate eval ID "${evalCase.id}" in ${firstPath} and ${caseFiles[index]}`
+      );
+    }
+    firstPathById.set(evalCase.id, caseFiles[index]);
+  });
+
+  return cases;
+}
+
+function collectCaseFiles(dir: string): string[] {
+  const caseFiles: string[] = [];
   for (const file of fs.readdirSync(dir)) {
     const fullPath = path.join(dir, file);
     const stat = fs.statSync(fullPath);
 
     if (stat.isDirectory()) {
       // recurse into subdirectories
-      cases.push(...parseEvalSuite(fullPath));
+      caseFiles.push(...collectCaseFiles(fullPath));
       continue;
     }
 
@@ -59,11 +77,10 @@ export function parseEvalSuite(dir: string): EvalCase[] {
       continue;
     }
 
-    const caseFile = parseCaseFile(fullPath);
-    cases.push(caseFile);
+    caseFiles.push(fullPath);
   }
 
-  return cases;
+  return caseFiles;
 }
 
 /** Basic schema validation before execution */

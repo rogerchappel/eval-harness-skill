@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -65,6 +65,27 @@ describe("eval-harness run", () => {
     const unsupportedResult = run([unsupported]);
     assert.notEqual(unsupportedResult.status, 0);
     assert.match(unsupportedResult.stderr, /Unsupported eval file type "\.txt"/);
+  });
+
+  it("rejects duplicate IDs before executing any suite command", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+    const nested = join(root, "nested");
+    const marker = join(root, "executed");
+    mkdirSync(nested);
+    const duplicate = {
+      id: "duplicate",
+      name: "duplicate",
+      category: "cli",
+      command: `${process.execPath} -e "require('node:fs').writeFileSync(${JSON.stringify(marker)}, '')"`,
+      expect: { type: "exact", value: "" }
+    };
+    writeFileSync(join(root, "first.json"), JSON.stringify(duplicate));
+    writeFileSync(join(nested, "second.json"), JSON.stringify(duplicate));
+
+    const result = run([root]);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Duplicate eval ID "duplicate"/);
+    assert.equal(existsSync(marker), false);
   });
 
   it("uses json, text, and markdown consistently for stdout and report files", () => {

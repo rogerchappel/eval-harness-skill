@@ -8,6 +8,7 @@
 - Write `--report` files in the selected JSON, text, or Markdown format.
 - Reject partial and non-finite command output in threshold expectations.
 - Reject unsupported `init --type` values before creating an eval directory.
+- Reject duplicate eval IDs across recursive suites before executing commands.
 
 ## 0.1.0
 
