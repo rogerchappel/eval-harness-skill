@@ -130,6 +130,56 @@ describe("eval-harness run", () => {
     assert.match(comparison.stdout, /regression/);
   });
 
+  it("creates missing parent directories for report files", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+    const input = join(root, "case.json");
+    const report = join(root, "reports", "nested", "report.json");
+    writeFileSync(input, JSON.stringify(evalCase("nested-report")));
+
+    const result = run([input, "--format", "json", "--report", report]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(readFileSync(report, "utf8")).passed, 1);
+  });
+
+  it("rejects report paths that would overwrite an eval case before execution", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+    const nested = join(root, "nested");
+    const marker = join(root, "executed");
+    mkdirSync(nested);
+    const input = join(root, "case.json");
+    const otherCase = join(nested, "other.json");
+    const definition = evalCase("protected");
+    definition.command = `${process.execPath} -e "require('node:fs').writeFileSync(${JSON.stringify(marker)}, '')"`;
+    writeFileSync(input, JSON.stringify(definition));
+    writeFileSync(otherCase, JSON.stringify(evalCase("other")));
+
+    for (const report of [input, otherCase]) {
+      const result = run([report === input ? input : root, "--report", report]);
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Report path .* eval case/);
+      assert.equal(existsSync(marker), false);
+    }
+  });
+
+  it("rejects reports inside recursively scanned suites on every run", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+    const nested = join(root, "artifacts");
+    const marker = join(root, "executed");
+    mkdirSync(nested);
+    const definition = evalCase("recursive-report");
+    definition.command = `${process.execPath} -e "require('node:fs').writeFileSync(${JSON.stringify(marker)}, '')"`;
+    writeFileSync(join(root, "case.json"), JSON.stringify(definition));
+    const report = join(nested, "report.json");
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const result = run([root, "--format", "json", "--report", report]);
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /Report path must be outside the eval suite/);
+      assert.equal(existsSync(report), false);
+      assert.equal(existsSync(marker), false);
+    }
+  });
+
   it("rejects unknown report formats", () => {
     const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
     const input = join(root, "case.json");
