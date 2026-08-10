@@ -65,6 +65,9 @@ program
   .option("--tag <tags>", "Filter by comma-separated tags")
   .action(async (dir, opts) => {
     const outputFormat = parseReportFormat(opts.format);
+    const reportPath = opts.report
+      ? validateReportPath(dir, opts.report)
+      : undefined;
     const cases = parseEvalSuite(dir);
 
     if (cases.length === 0) {
@@ -92,9 +95,10 @@ program
     const report = await runEvalSuite(filtered, opts.bail, previousReport);
     const text = formatReport(report, outputFormat);
 
-    if (opts.report) {
-      fs.writeFileSync(opts.report, text);
-      console.log(`Report written to ${opts.report}`);
+    if (reportPath) {
+      fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+      fs.writeFileSync(reportPath, text);
+      console.log(`Report written to ${reportPath}`);
     }
 
     console.log(text);
@@ -170,4 +174,44 @@ function parseEvalType(type: string): EvalType {
     );
   }
   return type as EvalType;
+}
+
+function validateReportPath(input: string, report: string): string {
+  const inputPath = resolvePath(input);
+  const reportPath = resolvePath(report);
+
+  if (fs.existsSync(inputPath) && fs.statSync(inputPath).isFile()) {
+    if (reportPath === inputPath) {
+      throw new Error(`Report path must not overwrite an eval case: ${report}`);
+    }
+    return reportPath;
+  }
+
+  if (fs.existsSync(inputPath) && fs.statSync(inputPath).isDirectory()) {
+    const relative = path.relative(inputPath, reportPath);
+    if (relative === "" || (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative))) {
+      throw new Error(
+        `Report path must be outside the eval suite and must not overwrite an eval case: ${report}`
+      );
+    }
+  }
+
+  return reportPath;
+}
+
+/** Resolve symlinks in the existing portion of a path without requiring its destination to exist. */
+function resolvePath(candidate: string): string {
+  let existing = path.resolve(candidate);
+  const missingSegments: string[] = [];
+
+  while (!fs.existsSync(existing)) {
+    const parent = path.dirname(existing);
+    if (parent === existing) {
+      break;
+    }
+    missingSegments.unshift(path.basename(existing));
+    existing = parent;
+  }
+
+  return path.join(fs.realpathSync(existing), ...missingSegments);
 }
