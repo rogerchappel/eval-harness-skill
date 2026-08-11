@@ -6,6 +6,8 @@
 - Add release-readiness checks for package metadata, pack contents, and CI verification.
 - Accept individual YAML, YML, and JSON eval files as `run` inputs.
 - Write `--report` files in the selected JSON, text, or Markdown format.
+- Create report parent directories and reject destinations that could overwrite
+  or be recursively rediscovered as eval cases.
 - Reject partial and non-finite command output in threshold expectations.
 - Reject unsupported `init --type` values before creating an eval directory.
 - Reject duplicate eval IDs across recursive suites before executing commands.

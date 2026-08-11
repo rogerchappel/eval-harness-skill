@@ -63,6 +63,13 @@ which is searched recursively. The `--format` option controls both stdout and
 `--report` file contents. Use `--format json` when creating a file for a later
 `--previous-report` comparison.
 
+Report destinations may use parent directories that do not exist yet; the CLI
+creates them before writing the report. A report must not overwrite a single
+case input and must be outside a directory used as a recursively scanned suite.
+Keeping reports outside the suite prevents generated JSON from being discovered
+as an eval case on later runs. These paths are resolved before any case command
+executes, including through existing symlinks.
+
 Every case `id` must be unique across the complete recursive suite. Duplicate
 IDs are rejected before any case command runs, and the error identifies both
 conflicting case files.
