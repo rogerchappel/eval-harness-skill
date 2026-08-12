@@ -105,6 +105,28 @@ try {
   assert(true, "Rejects eval case missing command");
 }
 
+// Test: validation rejects invalid timeouts with file and case context
+for (const timeout of [0, -1, "soon", null]) {
+  const invalidTimeoutPath = path.join(tmpDir, "evals", "bad-timeout.json");
+  fs.writeFileSync(invalidTimeoutPath, JSON.stringify({
+    id: "bad-timeout",
+    command: "echo never",
+    timeout,
+    expect: { type: "exact", value: "never" },
+  }));
+
+  try {
+    parseCaseFile(invalidTimeoutPath);
+    assert(false, `Should reject invalid timeout ${JSON.stringify(timeout)}`);
+  } catch (error: any) {
+    assert(
+      error.message.includes(invalidTimeoutPath) && error.message.includes("bad-timeout"),
+      `Invalid timeout ${JSON.stringify(timeout)} identifies its file and case`
+    );
+  }
+}
+fs.unlinkSync(path.join(tmpDir, "evals", "bad-timeout.json"));
+
 // Test: non-case files ignored
 fs.unlinkSync(path.join(tmpDir, "evals", "bad.yaml"));
 fs.writeFileSync(path.join(tmpDir, "evals", "README.md"), "# evals");
@@ -205,6 +227,20 @@ console.log("\nRunner Tests:");
   assert(errorOutputResult.actual?.includes("before fail") === true, "error result includes stdout for debugging");
   assert(errorOutputResult.actual?.includes("[stderr]") === true, "error result labels stderr for debugging");
   assert(errorOutputResult.actual?.includes("failure detail") === true, "error result includes stderr text");
+
+  const timeoutStart = Date.now();
+  const timeoutResult = await runEvalCase({
+    id: "timeout-tree",
+    name: "Timeout process tree",
+    category: "test",
+    command: "sh -c 'trap \"\" TERM; sleep 4'",
+    timeout: 100,
+    expect: { type: "exact", value: "never" },
+  });
+  const timeoutElapsed = Date.now() - timeoutStart;
+  assert(timeoutResult.status === "error", "timeout returns an execution error");
+  assert(timeoutResult.message.includes("timed out after 100ms"), "timeout reports an explicit diagnostic");
+  assert(timeoutElapsed < 1500, "timeout does not wait for a surviving descendant to exit");
 
   const regressionReport = await runEvalSuite([failCase], false, {
     total: 1,
