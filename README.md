@@ -78,6 +78,12 @@ Threshold expectations require the command's complete trimmed output to be a
 finite JavaScript number. Surrounding whitespace is allowed, but partial
 values such as `42oops` and non-finite values such as `Infinity` are rejected.
 
+Cases may set `timeout` to a finite positive number of milliseconds; the
+default is 30000. When the deadline expires, the harness terminates the spawned
+command tree and records an `error` result with an explicit timeout diagnostic.
+This prevents descendants from keeping output pipes open after their parent
+shell is terminated.
+
 ## Verification
 
 Run the same release-readiness gate used by CI:
