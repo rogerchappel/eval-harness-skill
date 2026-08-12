@@ -97,6 +97,16 @@ function validateEvalCase(evalCase: EvalCase, filePath: string): void {
   if (!evalCase.command) {
     throw new Error(`${filePath} (${evalCase.id}): missing required field "command"`);
   }
+  if (
+    evalCase.timeout !== undefined &&
+    (
+      typeof evalCase.timeout !== "number" ||
+      !Number.isFinite(evalCase.timeout) ||
+      evalCase.timeout <= 0
+    )
+  ) {
+    throw new Error(`${filePath} (${evalCase.id}): timeout must be a finite positive number`);
+  }
   if (!evalCase.expect) {
     throw new Error(`${filePath} (${evalCase.id}): missing required field "expect"`);
   }

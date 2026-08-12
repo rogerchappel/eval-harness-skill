@@ -143,16 +143,29 @@ function runCommand(
   }
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
+    const useProcessGroup = process.platform !== "win32";
     const child = spawn(command, {
       cwd: options.cwd,
       env: { ...process.env, ...options.env },
       shell: true,
+      // A separate process group lets timeout cleanup reach the shell and every
+      // command it spawned, including descendants that inherited stdout/stderr.
+      detached: useProcessGroup,
       stdio: ["pipe", "pipe", "pipe"],
     });
 
     let stdout = "";
     let stderr = "";
-    const timer = setTimeout(() => child.kill("SIGTERM"), options.timeout);
+    let timedOut = false;
+    let forceKillTimer: NodeJS.Timeout | undefined;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      killCommandTree(child.pid, "SIGTERM", useProcessGroup);
+      forceKillTimer = setTimeout(
+        () => killCommandTree(child.pid, "SIGKILL", useProcessGroup),
+        100
+      );
+    }, options.timeout);
 
     child.stdout.setEncoding("utf8");
     child.stderr.setEncoding("utf8");
@@ -164,10 +177,18 @@ function runCommand(
     });
     child.on("error", (error) => {
       clearTimeout(timer);
+      if (forceKillTimer) clearTimeout(forceKillTimer);
       reject(error);
     });
     child.on("close", (code, signal) => {
       clearTimeout(timer);
+      if (forceKillTimer) clearTimeout(forceKillTimer);
+      if (timedOut) {
+        const error = new Error(`Command timed out after ${options.timeout}ms`);
+        Object.assign(error, { signal, stdout, stderr });
+        reject(error);
+        return;
+      }
       if (code === 0) {
         resolve({ stdout, stderr });
       } else {
@@ -183,4 +204,23 @@ function runCommand(
       child.stdin.end();
     }
   });
+}
+
+function killCommandTree(
+  pid: number | undefined,
+  signal: NodeJS.Signals,
+  useProcessGroup: boolean
+): void {
+  if (pid === undefined) return;
+
+  try {
+    if (useProcessGroup) {
+      process.kill(-pid, signal);
+    } else {
+      process.kill(pid, signal);
+    }
+  } catch (error: any) {
+    // ESRCH means the command tree exited between the timeout and cleanup.
+    if (error?.code !== "ESRCH") throw error;
+  }
 }
