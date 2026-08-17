@@ -33,6 +33,31 @@ function writeThresholdCase(expectation: Record<string, unknown>): string {
 }
 
 describe("parseEvalSuite", () => {
+  it("rejects non-object YAML and JSON documents with file context", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-parser-"));
+    const documents = [
+      ["null.yaml", "null\n"],
+      ["scalar.yml", "plain text\n"],
+      ["array.yaml", "- first\n- second\n"],
+      ["null.json", "null"],
+      ["scalar.json", "42"],
+      ["array.json", "[]"]
+    ] as const;
+
+    for (const [name, content] of documents) {
+      const file = join(root, name);
+      writeFileSync(file, content);
+      assert.throws(
+        () => parseCaseFile(file),
+        (error: Error) => {
+          assert.equal(error.message, `${file}: eval case must be an object`);
+          assert.doesNotMatch(error.message, /TypeError/);
+          return true;
+        }
+      );
+    }
+  });
+
   it("parses a supported single case file", () => {
     const root = mkdtempSync(join(tmpdir(), "eval-harness-parser-"));
     const file = join(root, "single.yml");
