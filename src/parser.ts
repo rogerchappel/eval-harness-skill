@@ -12,16 +12,24 @@ const THRESHOLD_COMPARATORS = ["gte", "lte", "gt", "lt", "eq"] as const;
 export function parseCaseFile(filePath: string): EvalCase {
   const content = fs.readFileSync(filePath, "utf-8");
   const ext = path.extname(filePath).toLowerCase();
-  let parsed: EvalCase;
+  let parsed: unknown;
 
   if (ext === ".json") {
     parsed = JSON.parse(content);
   } else {
-    parsed = yaml.load(content) as EvalCase;
+    parsed = yaml.load(content);
   }
 
+  assertEvalCaseObject(parsed, filePath);
   validateEvalCase(parsed, filePath);
   return parsed;
+}
+
+/** Reject document shapes that cannot represent an eval case before field access. */
+function assertEvalCaseObject(value: unknown, filePath: string): asserts value is EvalCase {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error(`${filePath}: eval case must be an object`);
+  }
 }
 
 /** Parse all eval case files from a directory */
