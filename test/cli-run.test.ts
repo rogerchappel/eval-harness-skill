@@ -25,6 +25,20 @@ function evalCase(id: string, expected = "ok") {
 }
 
 describe("eval-harness run", () => {
+  it("reports non-object YAML and JSON inputs without TypeError stack traces", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+
+    for (const [name, content] of [["null.yaml", "null\n"], ["array.json", "[]"]]) {
+      const file = join(root, name);
+      writeFileSync(file, content);
+      const result = run([file]);
+
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, new RegExp(`${name}: eval case must be an object`));
+      assert.doesNotMatch(result.stderr, /TypeError/);
+    }
+  });
+
   it("accepts YAML, YML, and JSON single-case inputs", () => {
     const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
     for (const extension of ["yaml", "yml"]) {
