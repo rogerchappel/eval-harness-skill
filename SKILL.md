@@ -10,7 +10,7 @@ Use this skill when you need to:
 
 ## Required Tools
 
-- Node.js 18+
+- Node.js 22.12+
 - Terminal access (for running the CLI)
 - No external API keys or credentials required
 
