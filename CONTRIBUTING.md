@@ -4,7 +4,7 @@ Thank you for helping improve `eval-harness-skill`.
 
 ## Local Checks
 
-Use Node.js 18 or newer and run the full verification set before opening a pull request:
+Use Node.js 22.12 or newer and run the full verification set before opening a pull request:
 
 ```sh
 npm ci
