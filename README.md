@@ -58,6 +58,19 @@ Each case specifies:
 - Expected output (exact text, regex pattern, or schema validation)
 - Scoring rubric (pass/fail/threshold)
 
+Case files are validated before any command executes. `id`, `name`, `category`,
+and `command` are non-empty strings (`name` defaults to `id` and `category` to
+`uncategorized` when omitted). Optional `cwd`, `stdin`, and `skip` values are
+strings; `tags` is an array of strings; `env` is an object whose values are
+strings; and `timeout` is a finite positive number.
+
+`expect` must be an object with a `type` of `exact`, `contains`, `regex`,
+`schema`, or `threshold`. Text and regex matchers require a string `value`;
+`schema` requires an object `value`; and `threshold` requires a finite numeric
+`threshold`, with an optional `gte`, `lte`, `gt`, `lt`, or `eq` comparator and
+an optional finite non-negative tolerance. Schema errors identify the case
+file and invalid field, and prevent every command in that input from running.
+
 `run` accepts either a single `.yaml`, `.yml`, or `.json` case or a directory,
 which is searched recursively. The `--format` option controls both stdout and
 `--report` file contents. Use `--format json` when creating a file for a later
