@@ -26,7 +26,7 @@ export function parseCaseFile(filePath: string): EvalCase {
 }
 
 /** Reject document shapes that cannot represent an eval case before field access. */
-function assertEvalCaseObject(value: unknown, filePath: string): asserts value is EvalCase {
+function assertEvalCaseObject(value: unknown, filePath: string): asserts value is Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error(`${filePath}: eval case must be an object`);
   }
@@ -92,19 +92,27 @@ function collectCaseFiles(dir: string): string[] {
 }
 
 /** Basic schema validation before execution */
-function validateEvalCase(evalCase: EvalCase, filePath: string): void {
-  if (!evalCase.id) {
+function validateEvalCase(evalCase: Record<string, unknown>, filePath: string): asserts evalCase is Record<string, unknown> & EvalCase {
+  if (evalCase.id === undefined || evalCase.id === "") {
     throw new Error(`${filePath}: missing required field "id"`);
   }
-  if (!evalCase.name) {
+  requireNonEmptyString(evalCase.id, "id", filePath);
+  const caseContext = `${filePath} (${evalCase.id})`;
+  if (evalCase.name === undefined || evalCase.name === "") {
     evalCase.name = evalCase.id;
+  } else {
+    requireNonEmptyString(evalCase.name, "name", caseContext);
   }
-  if (!evalCase.category) {
+  if (evalCase.category === undefined || evalCase.category === "") {
     evalCase.category = "uncategorized";
+  } else {
+    requireNonEmptyString(evalCase.category, "category", caseContext);
   }
-  if (!evalCase.command) {
-    throw new Error(`${filePath} (${evalCase.id}): missing required field "command"`);
+  if (evalCase.command === undefined || evalCase.command === "") {
+    throw new Error(`${caseContext}: missing required field "command"`);
   }
+  requireNonEmptyString(evalCase.command, "command", caseContext);
+  validateOptionalFields(evalCase, caseContext);
   if (
     evalCase.timeout !== undefined &&
     (
@@ -113,49 +121,91 @@ function validateEvalCase(evalCase: EvalCase, filePath: string): void {
       evalCase.timeout <= 0
     )
   ) {
-    throw new Error(`${filePath} (${evalCase.id}): timeout must be a finite positive number`);
+    throw new Error(`${caseContext}: timeout must be a finite positive number`);
   }
-  if (!evalCase.expect) {
-    throw new Error(`${filePath} (${evalCase.id}): missing required field "expect"`);
+  if (evalCase.expect === undefined) {
+    throw new Error(`${caseContext}: missing required field "expect"`);
   }
-  if (!evalCase.expect.type) {
-    throw new Error(`${filePath} (${evalCase.id}): missing required field "expect.type"`);
+  if (!isObject(evalCase.expect)) {
+    throw new Error(`${caseContext}: expect must be an object`);
   }
-  if (!["exact", "contains", "regex", "schema", "threshold"].includes(evalCase.expect.type)) {
+  const expectation = evalCase.expect;
+  if (expectation.type === undefined || expectation.type === "") {
+    throw new Error(`${caseContext}: missing required field "expect.type"`);
+  }
+  if (typeof expectation.type !== "string") {
+    throw new Error(`${caseContext}: expect.type must be a string`);
+  }
+  if (!["exact", "contains", "regex", "schema", "threshold"].includes(expectation.type)) {
     throw new Error(
-      `${filePath} (${evalCase.id}): invalid expect.type "${evalCase.expect.type}". Must be exact|contains|regex|schema|threshold`
+      `${caseContext}: invalid expect.type "${expectation.type}". Must be exact|contains|regex|schema|threshold`
     );
   }
-  if (evalCase.expect.type === "threshold") {
-    if (typeof evalCase.expect.threshold !== "number" || !Number.isFinite(evalCase.expect.threshold)) {
+  if (expectation.type === "threshold") {
+    if (typeof expectation.threshold !== "number" || !Number.isFinite(expectation.threshold)) {
       throw new Error(
-        `${filePath} (${evalCase.id}): expect.threshold must be a finite number`
+        `${caseContext}: expect.threshold must be a finite number`
       );
     }
     if (
-      evalCase.expect.comparator !== undefined &&
-      !THRESHOLD_COMPARATORS.includes(evalCase.expect.comparator)
+      expectation.comparator !== undefined &&
+      !THRESHOLD_COMPARATORS.includes(expectation.comparator as typeof THRESHOLD_COMPARATORS[number])
     ) {
       throw new Error(
-        `${filePath} (${evalCase.id}): invalid expect.comparator "${evalCase.expect.comparator}". ` +
+        `${caseContext}: invalid expect.comparator "${expectation.comparator}". ` +
         `Must be ${THRESHOLD_COMPARATORS.join("|")}`
       );
     }
     if (
-      evalCase.expect.tolerance !== undefined &&
+      expectation.tolerance !== undefined &&
       (
-        typeof evalCase.expect.tolerance !== "number" ||
-        !Number.isFinite(evalCase.expect.tolerance) ||
-        evalCase.expect.tolerance < 0
+        typeof expectation.tolerance !== "number" ||
+        !Number.isFinite(expectation.tolerance) ||
+        expectation.tolerance < 0
       )
     ) {
       throw new Error(
-        `${filePath} (${evalCase.id}): expect.tolerance must be a finite non-negative number`
+        `${caseContext}: expect.tolerance must be a finite non-negative number`
       );
     }
     return;
   }
-  if (evalCase.expect.value === undefined && evalCase.expect.threshold === undefined) {
-    throw new Error(`${filePath} (${evalCase.id}): missing expect.value or expect.threshold`);
+  if (expectation.value === undefined) {
+    throw new Error(`${caseContext}: missing expect.value`);
+  }
+  if (expectation.type === "schema") {
+    if (!isObject(expectation.value)) {
+      throw new Error(`${caseContext}: expect.value must be an object for schema expectations`);
+    }
+  } else if (typeof expectation.value !== "string") {
+    throw new Error(`${caseContext}: expect.value must be a string for ${expectation.type} expectations`);
+  }
+}
+
+function requireNonEmptyString(value: unknown, field: string, context: string): asserts value is string {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error(`${context}: ${field} must be a non-empty string`);
+  }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function validateOptionalFields(evalCase: Record<string, unknown>, context: string): void {
+  for (const field of ["cwd", "stdin", "skip"] as const) {
+    if (evalCase[field] !== undefined && typeof evalCase[field] !== "string") {
+      throw new Error(`${context}: ${field} must be a string`);
+    }
+  }
+  if (evalCase.tags !== undefined && (
+    !Array.isArray(evalCase.tags) || evalCase.tags.some((tag) => typeof tag !== "string")
+  )) {
+    throw new Error(`${context}: tags must be an array of strings`);
+  }
+  if (evalCase.env !== undefined && (
+    !isObject(evalCase.env) || Object.values(evalCase.env).some((value) => typeof value !== "string")
+  )) {
+    throw new Error(`${context}: env must be an object with string values`);
   }
 }
