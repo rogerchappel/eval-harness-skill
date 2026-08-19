@@ -32,6 +32,20 @@ function writeThresholdCase(expectation: Record<string, unknown>): string {
   return file;
 }
 
+function writeCase(overrides: Record<string, unknown>): string {
+  const root = mkdtempSync(join(tmpdir(), "eval-harness-parser-"));
+  const file = join(root, "case.json");
+  writeFileSync(file, JSON.stringify({
+    id: "runtime-types",
+    name: "runtime types",
+    category: "parser",
+    command: 'echo "ok"',
+    expect: { type: "exact", value: "ok" },
+    ...overrides
+  }));
+  return file;
+}
+
 describe("parseEvalSuite", () => {
   it("rejects non-object YAML and JSON documents with file context", () => {
     const root = mkdtempSync(join(tmpdir(), "eval-harness-parser-"));
@@ -64,6 +78,38 @@ describe("parseEvalSuite", () => {
     writeFileSync(file, yamlCase("single"));
 
     assert.deepEqual(parseEvalSuite(file).map(({ id }) => id), ["single"]);
+  });
+
+  it("rejects malformed required case field types with file and field context", () => {
+    for (const [field, value] of [
+      ["id", 42],
+      ["name", []],
+      ["category", {}],
+      ["command", 42]
+    ] as const) {
+      const file = writeCase({ [field]: value });
+      assert.throws(
+        () => parseCaseFile(file),
+        new RegExp(`${file.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}.*${field} must be a non-empty string`)
+      );
+    }
+  });
+
+  it("rejects malformed expectation containers and matcher payloads", () => {
+    const malformed = [
+      [null, "expect must be an object"],
+      [[], "expect must be an object"],
+      [{ type: 42, value: "ok" }, "expect.type must be a string"],
+      [{ type: "exact", value: 42 }, "expect.value must be a string for exact expectations"],
+      [{ type: "contains", value: {} }, "expect.value must be a string for contains expectations"],
+      [{ type: "regex", value: [] }, "expect.value must be a string for regex expectations"],
+      [{ type: "schema", value: "object" }, "expect.value must be an object for schema expectations"]
+    ] as const;
+
+    for (const [expect, diagnostic] of malformed) {
+      const file = writeCase({ expect });
+      assert.throws(() => parseCaseFile(file), new RegExp(diagnostic.replace(".", "\\.")));
+    }
   });
 
   it("recursively parses supported files in a directory", () => {

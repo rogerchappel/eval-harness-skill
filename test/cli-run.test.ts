@@ -102,6 +102,26 @@ describe("eval-harness run", () => {
     assert.equal(existsSync(marker), false);
   });
 
+  it("rejects malformed case schemas before executing any command", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+    const marker = join(root, "executed");
+    const command = `${process.execPath} -e "require('node:fs').writeFileSync(${JSON.stringify(marker)}, '')"`;
+    const malformedCases = [
+      { ...evalCase("numeric-command"), command: 42 },
+      { ...evalCase("invalid-expect-value"), command, expect: { type: "contains", value: false } },
+      { ...evalCase("invalid-schema-value"), command, expect: { type: "schema", value: [] } }
+    ];
+
+    for (const [index, malformed] of malformedCases.entries()) {
+      const file = join(root, `malformed-${index}.json`);
+      writeFileSync(file, JSON.stringify(malformed));
+      const result = run([file]);
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, new RegExp(`malformed-${index}\\.json`));
+      assert.equal(existsSync(marker), false);
+    }
+  });
+
   it("uses json, text, and markdown consistently for stdout and report files", () => {
     const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
     const input = join(root, "case.json");
