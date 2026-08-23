@@ -28,10 +28,11 @@ npm install --global .
 
 ## Side-Effect Boundaries
 
-- Commands run in evals execute with local user permissions
-- The harness itself never makes network calls
+- `init` creates its sample suite at `--dir`, which may be outside the current directory
+- `run` creates parent directories and writes the formatted report at `--report`, which may be outside the eval suite
+- Eval commands execute with local user permissions in the selected case `cwd` (or the harness process directory), so they can perform any filesystem or network side effects available to that user
+- The harness itself makes no network calls; a command selected by an eval case may do so
 - Eval output is truncated at 500 chars in reports by default
-- No file writes outside the test/eval directory
 
 ## Approval Requirements
 

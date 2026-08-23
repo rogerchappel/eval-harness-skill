@@ -117,9 +117,12 @@ temporary project and exercises `--help`, `init`, `run`, and `smoke`.
 
 ## Safety
 
-- All execution is local — no network calls
+- The harness itself makes no network calls, but eval commands run with the
+  invoking user's permissions and may access the filesystem or network
+- `init --dir` and `run --report` may write outside the eval suite; review
+  destination paths before running them
 - No agent credentials or live data are required
-- Review eval case files before running them because commands execute locally
+- Review eval case files, including each optional `cwd`, before running them
 
 ## License
 
