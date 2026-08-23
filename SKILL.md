@@ -33,6 +33,7 @@ npm install --global .
 - Eval commands execute with local user permissions in the selected case `cwd` (or the harness process directory), so they can perform any filesystem or network side effects available to that user
 - The harness itself makes no network calls; a command selected by an eval case may do so
 - Eval output is truncated at 500 chars in reports by default
+- The embedded smoke check uses a unique operating-system temporary directory and always removes it
 
 ## Approval Requirements
 
