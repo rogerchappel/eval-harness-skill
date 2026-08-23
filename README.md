@@ -138,6 +138,8 @@ npm test
 npm run smoke
 ```
 
+The smoke command creates a unique disposable directory in the operating system's temporary area and removes it after either success or failure. It does not reuse or delete project-local `.tmp` content.
+
 ## Release readiness
 
 Run the release gate before tagging or publishing:

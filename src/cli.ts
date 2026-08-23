@@ -5,6 +5,7 @@ import { Command } from "commander";
 import { parseEvalSuite } from "./parser";
 import { runEvalSuite } from "./runner";
 import { formatReport } from "./reporter";
+import { runEmbeddedSmoke } from "./smoke";
 import { EvalReport } from "./types";
 import * as fs from "fs";
 import * as path from "path";
@@ -114,28 +115,9 @@ program
 const smoke = program.command("smoke").description("Run embedded smoke test");
 smoke.action(async () => {
   console.log("Running smoke test...");
-
-  // Test: exact match
-  const tmpDir = ".tmp/smoke";
-  fs.mkdirSync(tmpDir, { recursive: true });
-
-  // Create a simple eval case
-  const sample = {
-    id: "smoke-echo",
-    name: "Smoke echo test",
-    category: "smoke",
-    command: "echo hello",
-    expect: { type: "contains", value: "hello" },
-  };
-  fs.writeFileSync(path.join(tmpDir, "smoke.yaml"), yamlDump(sample));
-
-  const cases = parseEvalSuite(tmpDir);
-  const report = await runEvalSuite(cases);
+  const report = await runEmbeddedSmoke();
 
   console.log(formatReport(report, "text"));
-
-  // Cleanup
-  fs.rmSync(tmpDir, { recursive: true });
 
   if (report.passed === 1) {
     console.log("Smoke test passed ✓");
