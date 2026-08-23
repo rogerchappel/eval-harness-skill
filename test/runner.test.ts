@@ -5,6 +5,7 @@ import * as path from "path";
 import { parseCaseFile, parseEvalSuite } from "../src/parser";
 import { matchOutput } from "../src/matcher";
 import { runEvalCase, runEvalSuite } from "../src/runner";
+import { runEmbeddedSmoke } from "../src/smoke";
 import { yamlDump } from "../src/yaml";
 
 let passed = 0;
@@ -215,6 +216,22 @@ console.log("\nRunner Tests:");
   const errorResult = await runEvalCase(errorCase);
   assert(errorResult.status === "error", "non-zero exit returns an execution error");
 
+  console.log("\nSmoke Tests:");
+  const formerSmokeDir = path.join(".tmp", "smoke");
+  const sentinel = path.join(formerSmokeDir, "keep.txt");
+  fs.mkdirSync(formerSmokeDir, { recursive: true });
+  fs.writeFileSync(sentinel, "user content");
+  const smokeTempRoot = fs.mkdtempSync(path.join(tmpDir, "smoke-root-"));
+
+  const passingSmoke = await runEmbeddedSmoke("echo hello", smokeTempRoot);
+  assert(passingSmoke.passed === 1, "Embedded smoke succeeds");
+  assert(fs.readFileSync(sentinel, "utf8") === "user content", "Smoke preserves content at the former path");
+  assert(fs.readdirSync(smokeTempRoot).length === 0, "Smoke removes temporary artifacts after success");
+
+  const failingSmoke = await runEmbeddedSmoke("false", smokeTempRoot);
+  assert(failingSmoke.errors === 1, "Embedded smoke exposes an induced command failure");
+  assert(fs.readdirSync(smokeTempRoot).length === 0, "Smoke removes temporary artifacts after failure");
+
   const errorOutputCase = {
     id: "t5",
     name: "Error output case",
@@ -272,4 +289,5 @@ console.log("\nRunner Tests:");
 
   // Cleanup
   fs.rmSync(tmpDir, { recursive: true });
+  fs.rmSync(formerSmokeDir, { recursive: true });
 })();
