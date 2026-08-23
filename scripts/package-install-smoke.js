@@ -37,6 +37,15 @@ try {
   run("npm", ["init", "--yes"], { cwd: installRoot });
   run("npm", ["install", "--ignore-scripts", tarball], { cwd: installRoot });
 
+  const installedSkill = fs.readFileSync(
+    path.join(installRoot, "node_modules", "eval-harness-skill", "SKILL.md"),
+    "utf8"
+  );
+  assert.match(installedSkill, /`init` creates its sample suite at `--dir`/);
+  assert.match(installedSkill, /writes the formatted report at `--report`/);
+  assert.match(installedSkill, /any filesystem or network side effects available to that user/);
+  assert.match(installedSkill, /The harness itself makes no network calls/);
+
   const executable = path.join(
     installRoot,
     "node_modules",
