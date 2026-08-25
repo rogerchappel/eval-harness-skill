@@ -142,16 +142,43 @@ describe("eval-harness run", () => {
     }
   });
 
+  it("keeps user-controlled Markdown content inside four-cell result rows", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+    const input = join(root, "case.json");
+    const report = join(root, "report.md");
+    writeFileSync(input, JSON.stringify({
+      ...evalCase("markdown-safe"),
+      name: "alpha | beta\nnext",
+      category: "format | markdown"
+    }));
+
+    const result = run([input, "--format", "markdown", "--report", report]);
+    assert.equal(result.status, 0, result.stderr);
+    const markdown = readFileSync(report, "utf8");
+    const rows = markdown.split("\n").filter((line) => /(?:✅|❌|⚠️|⊘) (?:pass|fail|error|skip)/.test(line));
+    assert(rows.every((row) => row.split(/(?<!\\)\|/).length === 6), markdown);
+    assert.match(markdown, /alpha \\| beta<br>next/);
+    assert.match(markdown, /format \\| markdown/);
+  });
+
   it("keeps JSON reports usable for previous-report regression comparison", () => {
     const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
     const input = join(root, "case.json");
     const previous = join(root, "previous.json");
-    writeFileSync(input, JSON.stringify(evalCase("regression")));
+    writeFileSync(input, JSON.stringify({
+      ...evalCase("regression"),
+      name: "regression | name",
+      category: "category | markdown"
+    }));
 
     const baseline = run([input, "--format", "json", "--report", previous]);
     assert.equal(baseline.status, 0, baseline.stderr);
 
-    writeFileSync(input, JSON.stringify(evalCase("regression", "different")));
+    writeFileSync(input, JSON.stringify({
+      ...evalCase("regression", "different"),
+      name: "regression | name",
+      category: "category | markdown"
+    }));
     const comparison = run([
       input,
       "--previous-report",
@@ -161,7 +188,8 @@ describe("eval-harness run", () => {
     ]);
     assert.equal(comparison.status, 1, comparison.stderr);
     assert.match(comparison.stdout, /Regressions/);
-    assert.match(comparison.stdout, /regression/);
+    assert.match(comparison.stdout, /regression \\| name/);
+    assert.match(comparison.stdout, /category \\| markdown/);
   });
 
   it("creates missing parent directories for report files", () => {
