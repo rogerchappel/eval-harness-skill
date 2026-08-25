@@ -85,7 +85,7 @@ function formatMarkdown(report: EvalReport): string {
     lines.push("None ✓");
   } else {
     for (const r of failures) {
-      lines.push(`- **${r.name}** [\`${r.category}\`] — ${r.message}`);
+      lines.push(`- **${escapeMarkdown(r.name)}** [${escapeMarkdown(r.category)}] — ${escapeMarkdown(r.message)}`);
     }
   }
   lines.push("");
@@ -94,7 +94,7 @@ function formatMarkdown(report: EvalReport): string {
     lines.push("## Regressions");
     lines.push("");
     for (const regression of report.regressions) {
-      lines.push(`- **${regression.name}** [\`${regression.category}\`]`);
+      lines.push(`- **${escapeMarkdown(regression.name)}** [${escapeMarkdown(regression.category)}]`);
     }
     lines.push("");
   }
@@ -105,11 +105,22 @@ function formatMarkdown(report: EvalReport): string {
   lines.push("|------|----------|--------|---------:|");
   for (const r of report.results) {
     const icon = statusIcon(r.status);
-    lines.push(`| ${r.name} | ${r.category} | ${icon} ${r.status} | ${r.durationMs}ms |`);
+    lines.push(`| ${escapeMarkdown(r.name)} | ${escapeMarkdown(r.category)} | ${icon} ${r.status} | ${r.durationMs}ms |`);
   }
   lines.push("");
 
   return lines.join("\n");
+}
+
+/** Keep user-controlled text inside one Markdown block or table cell. */
+function escapeMarkdown(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\\/g, "\\\\")
+    .replace(/([|*_`\[\]#])/g, "\\$1")
+    .replace(/\r\n|\r|\n/g, "<br>");
 }
 
 function statusIcon(status: string): string {
