@@ -192,6 +192,30 @@ describe("eval-harness run", () => {
     assert.match(comparison.stdout, /category \\| markdown/);
   });
 
+  it("rejects malformed previous report entries before running any case", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+    const input = join(root, "case.json");
+    const previous = join(root, "previous.json");
+    const marker = join(root, "executed");
+    const definition = evalCase("prior-validation");
+    definition.command = `${process.execPath} -e "require('node:fs').writeFileSync(${JSON.stringify(marker)}, '')"`;
+    writeFileSync(input, JSON.stringify(definition));
+
+    for (const [report, diagnostic] of [
+      [{ results: [null] }, /results\[0\] must be an object/],
+      [{ results: [{ evalId: "case", name: "case", category: "cli", status: "unknown", message: "ok", durationMs: 1, timestamp: "now" }] }, /results\[0\]\.status must be pass, fail, skip, error/],
+      [{ results: [{ evalId: "", name: "case", category: "cli", status: "pass", message: "ok", durationMs: 1, timestamp: "now" }] }, /results\[0\]\.evalId must be a non-empty string/]
+    ] as const) {
+      writeFileSync(previous, JSON.stringify(report));
+      const result = run([input, "--previous-report", previous]);
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, new RegExp(`Invalid previous report .*previous\\.json`));
+      assert.match(result.stderr, diagnostic);
+      assert.doesNotMatch(result.stderr, /TypeError/);
+      assert.equal(existsSync(marker), false);
+    }
+  });
+
   it("creates missing parent directories for report files", () => {
     const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
     const input = join(root, "case.json");

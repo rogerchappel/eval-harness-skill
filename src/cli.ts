@@ -14,6 +14,7 @@ import { yamlDump } from "./yaml";
 const program = new Command();
 const REPORT_FORMATS = ["json", "text", "markdown"] as const;
 const EVAL_TYPES = ["cli", "lib"] as const;
+const RESULT_STATUSES = ["pass", "fail", "skip", "error"] as const;
 type ReportFormat = (typeof REPORT_FORMATS)[number];
 type EvalType = (typeof EVAL_TYPES)[number];
 
@@ -89,9 +90,15 @@ program
       process.exit(0);
     }
 
-    const previousReport = opts.previousReport
-      ? readPreviousReport(opts.previousReport)
-      : undefined;
+    let previousReport: EvalReport | undefined;
+    if (opts.previousReport) {
+      try {
+        previousReport = readPreviousReport(opts.previousReport);
+      } catch (error) {
+        console.error(error instanceof Error ? error.message : String(error));
+        process.exit(1);
+      }
+    }
 
     const report = await runEvalSuite(filtered, opts.bail, previousReport);
     const text = formatReport(report, outputFormat);
@@ -130,14 +137,45 @@ smoke.action(async () => {
 program.parse();
 
 function readPreviousReport(file: string): EvalReport {
-  const raw = fs.readFileSync(file, "utf8");
-  const parsed = JSON.parse(raw) as EvalReport;
-
-  if (!Array.isArray(parsed.results)) {
-    throw new Error(`Previous report must be a JSON eval report with a results array: ${file}`);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid previous report ${file}: ${detail}`);
   }
 
-  return parsed;
+  if (!isRecord(parsed) || !Array.isArray(parsed.results)) {
+    throw new Error(`Invalid previous report ${file}: expected an object with a results array`);
+  }
+
+  parsed.results.forEach((result, index) => validatePreviousResult(result, index, file));
+  return parsed as unknown as EvalReport;
+}
+
+function validatePreviousResult(value: unknown, index: number, file: string): void {
+  const field = `results[${index}]`;
+  if (!isRecord(value)) {
+    throw new Error(`Invalid previous report ${file}: ${field} must be an object`);
+  }
+  for (const key of ["evalId", "name", "category", "message", "timestamp"] as const) {
+    if (typeof value[key] !== "string" || value[key].trim() === "") {
+      throw new Error(`Invalid previous report ${file}: ${field}.${key} must be a non-empty string`);
+    }
+  }
+  if (!RESULT_STATUSES.includes(value.status as (typeof RESULT_STATUSES)[number])) {
+    throw new Error(`Invalid previous report ${file}: ${field}.status must be ${RESULT_STATUSES.join(", ")}`);
+  }
+  if (typeof value.durationMs !== "number" || !Number.isFinite(value.durationMs) || value.durationMs < 0) {
+    throw new Error(`Invalid previous report ${file}: ${field}.durationMs must be a finite non-negative number`);
+  }
+  if (value.actual !== undefined && typeof value.actual !== "string") {
+    throw new Error(`Invalid previous report ${file}: ${field}.actual must be a string when provided`);
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function parseReportFormat(format: string): ReportFormat {
