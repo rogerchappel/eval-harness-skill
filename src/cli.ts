@@ -106,7 +106,7 @@ program
     if (reportPath) {
       fs.mkdirSync(path.dirname(reportPath), { recursive: true });
       fs.writeFileSync(reportPath, text);
-      console.log(`Report written to ${reportPath}`);
+      console.error(`Report written to ${reportPath}`);
     }
 
     console.log(text);
