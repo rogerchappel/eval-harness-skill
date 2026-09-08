@@ -142,6 +142,17 @@ describe("eval-harness run", () => {
     }
   });
 
+  it("keeps JSON stdout machine-readable when also writing a report", () => {
+    const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
+    const input = join(root, "case.json");
+    const report = join(root, "report.json");
+    writeFileSync(input, JSON.stringify(evalCase("json-stdout")));
+
+    const result = run([input, "--format", "json", "--report", report]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(JSON.parse(result.stdout), JSON.parse(readFileSync(report, "utf8")));
+  });
+
   it("keeps user-controlled Markdown content inside four-cell result rows", () => {
     const root = mkdtempSync(join(tmpdir(), "eval-harness-cli-"));
     const input = join(root, "case.json");
