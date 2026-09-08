@@ -137,8 +137,11 @@ describe("eval-harness run", () => {
       const report = join(root, `report.${format}`);
       const result = run([input, "--format", format, "--report", report]);
       assert.equal(result.status, 0, result.stderr);
+      const savedReport = readFileSync(report, "utf8");
       assert.match(result.stdout, pattern);
-      assert.match(readFileSync(report, "utf8"), pattern);
+      assert.match(savedReport, pattern);
+      assert.equal(result.stdout, `${savedReport}\n`);
+      assert.match(result.stderr, new RegExp(`Report written to ${report.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
     }
   });
 
