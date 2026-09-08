@@ -74,7 +74,9 @@ file and invalid field, and prevent every command in that input from running.
 `run` accepts either a single `.yaml`, `.yml`, or `.json` case or a directory,
 which is searched recursively. The `--format` option controls both stdout and
 `--report` file contents. Use `--format json` when creating a file for a later
-`--previous-report` comparison. Previous reports are validated completely
+`--previous-report` comparison. When `--report` is used, the destination
+acknowledgement is written to stderr so stdout remains exactly the selected
+report format and can be piped safely. Previous reports are validated completely
 before any case command executes: the document must contain a `results` array,
 and every result must contain the non-empty strings, supported status, and
 finite non-negative duration produced by this harness. Malformed entries are
