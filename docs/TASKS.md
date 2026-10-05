@@ -10,7 +10,7 @@
 - [x] CLI surface (init, run, smoke)
 - [x] Fixture eval cases
 - [x] Tests for parser, matcher, runner
-- [ ] Validate script
+- [x] Validate script
 - [x] README
 - [x] PRD
-- [ ] ORCHESTRATION.md
+- [x] ORCHESTRATION.md
